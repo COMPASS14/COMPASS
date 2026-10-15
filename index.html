@@ -218,7 +218,14 @@ const THEMES = {
 /* ---------- 状態と保存 ---------- */
 const blank = () => ({settings:{persist:false}, entries:{}, sorts:[], steps:[]});
 let S = blank();
-try { if (localStorage.getItem('compass-persist') === '1') { const d = JSON.parse(localStorage.getItem('compass-data') || 'null'); if (d) S = Object.assign(blank(), d); S.settings.persist = true; } } catch(e) {}
+try {
+  if (localStorage.getItem('compass-persist') !== '0') {
+    localStorage.setItem('compass-persist','1');
+    const d = JSON.parse(localStorage.getItem('compass-data') || 'null');
+    if (d) S = Object.assign(blank(), d);
+    S.settings.persist = true;
+  }
+} catch(e) { S.settings.persist = false; }
 function save(){ if (!S.settings.persist) return; try { localStorage.setItem('compass-data', JSON.stringify(S)); } catch(e) {} }
 
 const newDraft = () => ({theme:'', who:'self', trouble:'', when:'', where:'', withWhom:'', burden:5, loads:[], tried:'', kept:'', people:[], peopleNote:'', supports:[], supportNote:''});
@@ -405,9 +412,10 @@ function sheetSettings(){
   return `<div class="row" style="align-items:center"><h1 style="flex:3">設定</h1><button class="icon-btn" type="button" data-act="closeSheet" style="flex:0 0 auto">閉じる</button></div>
   <div class="card"><h2>記録の保存先</h2>
     <div class="opts">
-      <button class="opt" type="button" data-persist="0" ${pressed(!S.settings.persist)}><b>このタブを閉じるまで</b><small>標準の設定です。閉じると記録は消えます。</small></button>
-      <button class="opt" type="button" data-persist="1" ${pressed(S.settings.persist)}><b>この端末のブラウザに残す</b><small>同じ端末・同じブラウザでだけ見られます。端末間の同期はありません。</small></button>
-    </div><p class="help">記録が外部に送信されることはありません。</p></div>
+      <button class="opt" type="button" data-persist="0" ${pressed(!S.settings.persist)}><b>このタブを閉じるまで</b><small>閉じたり再読み込みしたりすると、記録は消えます。</small></button>
+      <button class="opt" type="button" data-persist="1" ${pressed(S.settings.persist)}><b>この端末のブラウザに残す</b><small>標準の設定です。同じ端末・同じブラウザでだけ見られます。端末間の同期はありません。</small></button>
+    </div><p class="help">記録が外部に送信されることはありません。家族と共有している端末では「このタブを閉じるまで」を選ぶと安心です。</p>
+    <p class="help">iPhoneのSafariでは、しばらく開かないと記録が自動で消えることがあります。共有ボタンから「ホーム画面に追加」しておくと消えにくくなります。</p></div>
   <div class="card"><h2>表示</h2><button class="opt" type="button" data-act="toggleWhy" ${pressed(showWhy)}><b>質問の理由を表示する</b><small>整理の各質問に、なぜそれを聞くのかを添えます。</small></button></div>
   <div class="card"><h2>試験利用の感想</h2><p class="help">使ってみた感想を、COMPASS公式LINEに送れます。</p><button class="btn ghost" type="button" data-act="openFeedback">感想を書く</button></div>
   <div class="card"><h2>記録をすべて削除</h2><p class="help">削除した記録は元に戻せません。</p>
@@ -483,7 +491,7 @@ document.addEventListener('click', e => {
   if (d.addStep) { S.steps.push({id:uid(), date:todayKey(), theme:d.theme, text:d.addStep, status:''}); save(); toast('今日の一歩に加えました'); return render(); }
   if (d.status) { const s = S.steps.find(x=>x.id===d.status); s.status = s.status===d.val ? '' : d.val; save(); return render(); }
   if (d.persist) { S.settings.persist = d.persist==='1';
-    try { if (S.settings.persist) { localStorage.setItem('compass-persist','1'); save(); toast('この端末のブラウザに残します'); } else { localStorage.removeItem('compass-persist'); localStorage.removeItem('compass-data'); toast('端末への保存をやめました。記録はこのタブを閉じるまで残ります'); } }
+    try { if (S.settings.persist) { localStorage.setItem('compass-persist','1'); save(); toast('この端末のブラウザに残します'); } else { localStorage.setItem('compass-persist','0'); localStorage.removeItem('compass-data'); toast('端末への保存をやめました。記録はこのタブを閉じるまで残ります'); } }
     catch(err) { S.settings.persist = false; toast('このブラウザでは端末に保存できません'); }
     return openSheet('settings'); }
   const a = d.act; if (!a) return;
